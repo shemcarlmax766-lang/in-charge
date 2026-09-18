@@ -8,7 +8,7 @@ server proxies `/api` to port 4000.
 
 | Topic | Rule |
 | --- | --- |
-| Auth | Opaque session token. `POST /auth/login` sets an `httpOnly` `SameSite=Lax` cookie **and** returns a `token` for `Authorization: Bearer <token>`. Either works; cookie clients must also send the CSRF header (below). |
+| Auth | Opaque session token. `POST /auth/login` sets an `httpOnly` `SameSite=Lax` cookie **and** returns a `token` for `Authorization: Bearer <token>`. Either works; cookie clients must also send the CSRF header (below). Cross-origin clients (the Capacitor shells) use Bearer and are served only if their origin is listed in `NATIVE_ORIGINS` — the CORS shim in `app.js` answers nothing else; web deployments leave it unset and the API stays strictly same-origin (see [MOBILE.md](MOBILE.md)). |
 | CSRF | Any *cookie-authenticated* write (`POST`/`PATCH`/`PUT`/`DELETE`) must send `X-BM-CSRF: <csrfToken>` (the value from `GET /auth/me`). Missing/wrong → `403`. Bearer requests are exempt (no ambient credential). |
 | Errors | `{ "error": { "code", "message", ...details } }`. Codes: `validation` (400/422), `unauthorized` (401), `forbidden` (403, always carries a plain-language `hint`), `not_found` (404), `conflict` (409), `rate_limited` (429), `too_large` (413), `server` (500, message never leaks internals). |
 | Pagination | `?page=1&pageSize=25` (max `MAX_PAGE_SIZE`, default 25, 100). List responses: `{ items, page, pageSize, total, totalPages }`. |

@@ -62,6 +62,9 @@ export const config = {
     baseUrl: str(env.PUBLIC_BASE_URL, ''),
     trustProxy: bool(env.TRUST_PROXY, isProd),
     bodyLimit: str(env.BODY_LIMIT, '1mb'),
+    // Comma-separated origins of Capacitor app shells (e.g. https://localhost). Empty (the
+    // default) means the API stays strictly same-origin and sends no CORS headers at all.
+    nativeOrigins: (env.NATIVE_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   },
 
   paths: {

@@ -2,14 +2,24 @@
  * Single entry point for every server call.
  *
  * Responsibilities, and nothing more:
- *  - same-origin relative URLs only (the app is proxied; nothing here knows a port or host);
- *  - `credentials: 'include'` so the httpOnly session cookie rides along;
+ *  - same-origin relative URLs by default (a native shell may set VITE_API_BASE — see below);
+ *  - `credentials` so the httpOnly session cookie rides along on the web build;
  *  - the CSRF token the server issued, on every mutating request;
  *  - one error shape: an `ApiError` carrying status, code, message and a per-field map, so
  *    forms can render server-side validation inline instead of guessing.
  */
 
-const BASE = '/api/v1';
+/**
+ * API base override for native shells (Capacitor). The web app stays same-origin — leave the
+ * env unset and nothing here changes. A bundled APK/IPA built with
+ * `VITE_API_BASE=http://192.168.1.50:4000 npm run build` talks to the department server
+ * cross-origin (server side: allow it via NATIVE_ORIGINS; client side: the bearer token, not
+ * the cookie, carries the session — see AuthContext).
+ */
+const API_BASE = import.meta.env.VITE_API_BASE || '';
+export const isNativeShell = API_BASE.length > 0;
+
+const BASE = `${API_BASE}/api/v1`;
 let csrfToken = null;
 let onUnauthorized = () => {};
 

@@ -72,7 +72,8 @@ Docs: [ARCHITECTURE](docs/ARCHITECTURE.md) ·
 [API](docs/API.md) · [DATABASE](docs/DATABASE.md) · [SECURITY](docs/SECURITY.md) ·
 [UI](docs/UI.md) · [SAFETY](docs/SAFETY.md) · [REPORTS](docs/REPORTS.md) ·
 [INTEGRATIONS](docs/INTEGRATIONS.md) · [TESTING](docs/TESTING.md) ·
-[OPERATIONS](docs/OPERATIONS.md) · [PHASES](docs/PHASES.md) · [FAILURE-POINTS](docs/FAILURE-POINTS.md)
+[OPERATIONS](docs/OPERATIONS.md) · [MOBILE](docs/MOBILE.md) ·
+[PHASES](docs/PHASES.md) · [FAILURE-POINTS](docs/FAILURE-POINTS.md)
 
 ## Layout
 
@@ -108,6 +109,9 @@ npm run smoke -- --base URL       # live-environment check (SMOKE_PASSWORD env, 
 
 Phones can **install** the app (PWA manifest + icons; a production-only service worker caches
 the shell but is forbidden from touching `/api/**` — an offline queue that silently swallows a
-fault report would be worse than a visible error, so there isn't one).
+fault report would be worse than a visible error, so there isn't one). For real app stores there
+are **Capacitor shells** committed under `client/android` and `client/ios` — build the APK with
+`npm run android:apk` (Android Studio toolchain) and test everything locally, phone + laptop on
+one Wi-Fi, with the playbook in [docs/MOBILE.md](docs/MOBILE.md).
 
 Deployment notes (systemd, TLS, backups, upgrade ladder) — [docs/OPERATIONS.md](docs/OPERATIONS.md).

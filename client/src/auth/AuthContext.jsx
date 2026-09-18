@@ -1,7 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { auth, setCsrf, setBearer, setUnauthorizedHandler } from '../api/client.js';
+import { auth, setCsrf, setBearer, setUnauthorizedHandler, isNativeShell } from '../api/client.js';
 
 const AuthContext = createContext(null);
+
+/**
+ * A native shell (Capacitor APK/IPA) has no persistent cookie jar across app restarts, so the
+ * bearer token is kept in local storage there.  The web build NEVER does this — the httpOnly
+ * cookie is the credential there, precisely so a stolen XSS payload cannot exfiltrate a
+ * long-lived token from storage (docs/SECURITY.md).  One flag, two modes.
+ */
+const TOKEN_KEY = 'bems.bearer';
+const persistBearer = (token) => {
+  if (!isNativeShell) return;
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch { /* storage disabled — login still works for the session */ }
+};
+const storedBearer = () => {
+  if (!isNativeShell) return null;
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+};
 
 /**
  * Session state for the whole app.
@@ -17,11 +36,15 @@ export function AuthProvider({ children }) {
 
   const applySession = useCallback((session) => {
     setBearer(session?.token ?? null);
+    persistBearer(session?.token ?? null);
     setCsrf(session?.csrfToken ?? null);
     setUser(session?.user ?? session ?? null);
   }, []);
 
   const bootstrap = useCallback(async () => {
+    // Native shell only: restore the bearer token from the previous run before asking who we are.
+    const restored = storedBearer();
+    if (restored) setBearer(restored);
     try {
       const me = await auth.me();
       setCsrf(me.csrfToken ?? null);
@@ -29,6 +52,8 @@ export function AuthProvider({ children }) {
       setStatus('authenticated');
     } catch (err) {
       setCsrf(null);
+      setBearer(null);
+      persistBearer(null);
       setUser(null);
       setStatus('anonymous');
     }
@@ -45,6 +70,7 @@ export function AuthProvider({ children }) {
         setUser(null);
         setCsrf(null);
         setBearer(null);
+        persistBearer(null);
         return 'anonymous';
       });
     });
@@ -64,6 +90,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setCsrf(null);
     setBearer(null);
+    persistBearer(null);
     setStatus('anonymous');
   }, []);
 

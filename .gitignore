@@ -10,3 +10,18 @@ coverage/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+
+# native shell build output (the android/ + ios/ *projects* are committed by design —
+# the compile artifacts are not; see docs/MOBILE.md)
+client/android/.gradle/
+client/android/build/
+client/android/app/build/
+client/android/app/release/
+client/android/capacitor-cordova-android-plugins/build/
+client/android/local.properties
+client/ios/build/
+client/ios/DerivedData/
+client/ios/Pods/
+client/ios/App.xcodeproj/project.xcworkspace/xcuserdata/
+client/ios/App.xcworkspace/xcuserdata/
+client/test/.build/

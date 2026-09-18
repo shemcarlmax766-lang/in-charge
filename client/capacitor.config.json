@@ -1,0 +1,15 @@
+{
+  "appId": "edu.hospitaltraining.bemfrs",
+  "appName": "BEM-FRS",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "scheme": "App"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

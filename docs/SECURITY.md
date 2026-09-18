@@ -20,7 +20,11 @@ scoped to that — this is not a bank.
 * **Transport to client** — cookie `bmems_session`: `HttpOnly`, `SameSite=Lax`, `Secure` in
   production, Path `/`, TTL `SESSION_TTL_HOURS` (12h) or `SESSION_REMEMBER_TTL_HOURS` (14d).
   Mobile/scripts may instead use `Authorization: Bearer <token>` returned at login — same
-  session row, so revocation applies to both.
+  session row, so revocation applies to both. The **native app shells** (Capacitor) are the one
+  client that must persist its bearer token in local storage across restarts (`isNativeShell`
+  branch in `AuthContext`; the web build never writes it anywhere). Standard trade for wrapped
+  apps — revocation (`/auth/logout`, admin sign-out, expiry) still binds; a device with physical
+  access is the assumed adversary there, same as the locked phone holding a browser session.
 * **Login hardening** — per-account counter: `failed_attempts` + `locked_until` (default 6 /
   15 min, `MAX_FAILED_LOGIN_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES`), checked **before** hashing the
   candidate password (lockout also caps scrypt DoS). Uniform 401 `Invalid email or password`

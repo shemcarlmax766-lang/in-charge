@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BEM-FRS</string>
+    <string name="title_activity_main">BEM-FRS</string>
+    <string name="package_name">edu.hospitaltraining.bemfrs</string>
+    <string name="custom_url_scheme">edu.hospitaltraining.bemfrs</string>
+</resources>

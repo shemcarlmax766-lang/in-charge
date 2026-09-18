@@ -27,6 +27,24 @@ export function createApp({ serveClient = true } = {}) {
   if (config.server.trustProxy) app.set('trust proxy', 1);
 
   app.use(securityHeaders);
+  if (config.server.nativeOrigins.length) {
+    // CORS for native app shells ONLY, and only for explicitly listed origins. Web deployments
+    // leave NATIVE_ORIGINS unset and this middleware is not even mounted. Bearer auth + the CSRF
+    // exemption for bearer requests keep the security model identical for these clients.
+    const allowed = new Set(config.server.nativeOrigins);
+    app.use('/api', (req, res, next) => {
+      const origin = req.headers.origin;
+      if (origin && allowed.has(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type, x-bm-csrf, accept');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Max-Age', '600');
+        if (req.method === 'OPTIONS') return res.status(204).end();
+      }
+      return next();
+    });
+  }
   app.use((req, res, next) => {
     // Only reject when a body is actually present, so a bare POST stays valid.
     if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.headers['content-type'] !== undefined
