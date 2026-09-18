@@ -1,0 +1,21 @@
+{
+  "name": "@bmems/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BEM-FRS API server",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --no-warnings --experimental-sqlite --watch src/index.js",
+    "start": "node --no-warnings --experimental-sqlite src/index.js",
+    "migrate": "node --no-warnings --experimental-sqlite src/db/migrate.js",
+    "seed": "node --no-warnings --experimental-sqlite src/db/seed.js",
+    "reset": "node --no-warnings --experimental-sqlite src/db/reset.js",
+    "test": "node --no-warnings --experimental-sqlite --test-force-exit --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.3.0",
+    "qrcode": "^1.5.4"
+  }
+}
