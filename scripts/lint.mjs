@@ -49,8 +49,9 @@ const CHECKS = [
     name: 'secret-looking value logged',
     re: /console\.\w+\((?:[^)]*(?:password|token|csrf|secret)[^)]*)\)/i,
     // The seeder/boot banner deliberately prints the one-off demo password so the
-    // reviewer can sign in; production code paths have nothing to print.
-    allow: /test|redact|\.env|lint\.mjs|db\/seed\.js|src\/index\.js/,
+    // reviewer can sign in; the live smoke script prints the ENV VAR NAME it wants the
+    // operator to set — neither logs a value, and no other code path has anything to print.
+    allow: /test|redact|\.env|lint\.mjs|db\/seed\.js|src\/index\.js|live-smoke\.mjs/,
   },
 ];
 

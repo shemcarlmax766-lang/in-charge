@@ -22,6 +22,8 @@
     "test": "npm run test:server && npm run test:client",
     "test:server": "npm run test -w server",
     "test:client": "npm run test -w client",
+    "smoke": "node scripts/live-smoke.mjs",
+    "icons": "node scripts/make-icons.mjs",
     "lint": "node scripts/lint.mjs"
   },
   "devDependencies": {

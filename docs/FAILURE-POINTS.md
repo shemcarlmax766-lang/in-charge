@@ -56,6 +56,9 @@ residual risk the department is accepting. Ordered roughly by likelihood × impa
 ## 6. Deliberate non-failures (scoping decisions, listed so they aren't rediscovered as “bugs”)
 
 * No stock decrement on parts (`in_stock` is informational) — inventory ledger is a warehouse system's job.
-* No offline PWA queue — a phone with no LAN cannot reach *any* of this; pretending otherwise (background sync of fault drafts) risks data loss the department can't afford. Drafts stay in the form state until submit.
+* **Offline PWA** — the *app shell* is installable and offline-cached (UI.md §5) so a phone at a
+  dead-corner still opens instantly; but there is deliberately **no offline write queue** — a
+  background sync of fault drafts risks silently "losing" a critical report, and pretending
+  otherwise is worse than a visible error. Drafts stay in the form state until submit.
 * No `WebSocket` push — the bell polls `unread-count` while visible; at department scale the trade favours boring.
 * No server-side PDF rendering — print view + browser PDF keeps one rendering path (see REPORTS.md).

@@ -75,7 +75,22 @@ state, deliberately.
 * Focus is never removed; every interactive element keeps a visible `:focus-visible` ring.
 * Fonts: system stack (no webfont payload); tabular numerals on metrics.
 
-## 5. Cross-cutting behaviours
+## 5. Installable app shell (PWA)
+
+* `manifest.webmanifest` + generated icons (`npm run icons` → `scripts/make-icons.mjs`, a
+  dependency-free PNG rasterizer — the favicon's ECG motif on navy, `any` + `maskable` +
+  apple-touch sizes): install to home screen, standalone display, "Report a fault" shortcut.
+* A **production-only** service worker (`client/public/sw.js`, registered in `main.jsx` behind
+  `import.meta.env.PROD`) caches the *shell*: navigations network-first with cached fallback,
+  hashed assets stale-while-revalidate, **`/api/**` never intercepted**. A phone that loses the
+  LAN still opens the app and shows the normal error states — it cannot pretend a report was
+  accepted. Dev (Vite/HMR) is never touched by the SW, by design.
+* Server-side cache policy matches: `/assets/*` (content-hashed) `1y immutable`; `index.html`,
+  manifest, icons and `sw.js` revalidate (`max-age=0` + ETag) so a deploy is picked up on next
+  load — the classic "immutable everything" stale-shell trap is explicitly avoided
+  (`server/src/app.js`).
+
+## 6. Cross-cutting behaviours
 
 * **Offline/latency honesty** — mutations optimistically *no*: button busy state, then server
   truth re-renders the row (records must not show unconfirmed state).

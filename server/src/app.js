@@ -58,14 +58,20 @@ export function createApp({ serveClient = true } = {}) {
   app.use('/api/v1', globalLimit(), authenticate, csrfGuard, apiRouter());
 
   if (serveClient && fs.existsSync(config.paths.clientDist)) {
-    app.use(express.static(config.paths.clientDist, {
+    // Cache policy has to distinguish content-hashed files from the rest: Vite emits immutable
+    // /assets/*.<hash>.js chunks, but index.html, the manifest, icons and sw.js are NOT hashed —
+    // serving those with 1y/immutable pins a stale shell over every future deploy.
+    const assetsDir = path.join(config.paths.clientDist, 'assets');
+    app.use('/assets', express.static(assetsDir, {
       index: false,
       maxAge: config.isProd ? '1y' : 0,
       immutable: config.isProd,
     }));
+    app.use(express.static(config.paths.clientDist, { index: false, maxAge: 0 }));
     // SPA deep links (including QR targets such as /e/BMU-ECG-0007) resolve to the shell.
     app.use((req, res, next) => {
       if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+      if (req.path.startsWith('/assets/')) return next(); // missing chunk → 404, not shell HTML
       const index = path.join(config.paths.clientDist, 'index.html');
       if (!fs.existsSync(index)) return next();
       return res.type('html').set('Cache-Control', 'no-cache').sendFile(index);

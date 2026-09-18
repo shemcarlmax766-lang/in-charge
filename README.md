@@ -22,7 +22,9 @@ npm run dev          # API :4000  +  Vite SPA :5173 (proxies /api)
 ```
 
 First boot on an empty `data/` directory runs migrations and installs the fictional demo fleet.
-Full gate: `npm test` (87 server + 42 client tests) and `npm run lint`.
+Full gate: `npm test` (87 server + 42 client tests) and `npm run lint`. Against a deployed
+instance, `SMOKE_PASSWORD=… npm run smoke -- --base https://your-host` runs 31 read-only checks
+(auth, RBAC negatives, the public QR contract, exports, the PWA surface).
 
 ### Demo accounts
 
@@ -101,6 +103,11 @@ docs/                the design documents this project was built from
 npm run build && npm run start    # one process serves API + built SPA on :4000 (prod shape)
 npm run reset                     # drop + re-migrate + re-seed (dev convenience)
 npm run test                      # full suite: server 87, client 42 (~1 min, no infra)
+npm run smoke -- --base URL       # live-environment check (SMOKE_PASSWORD env, nothing stored)
 ```
+
+Phones can **install** the app (PWA manifest + icons; a production-only service worker caches
+the shell but is forbidden from touching `/api/**` — an offline queue that silently swallows a
+fault report would be worse than a visible error, so there isn't one).
 
 Deployment notes (systemd, TLS, backups, upgrade ladder) — [docs/OPERATIONS.md](docs/OPERATIONS.md).

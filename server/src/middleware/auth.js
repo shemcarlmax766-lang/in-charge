@@ -1,7 +1,7 @@
 import { config } from '../config/index.js';
 import { hashToken } from '../lib/tokens.js';
 import { getDb } from '../lib/db.js';
-import { AppError, forbidden, unauthorized } from '../lib/errors.js';
+import { forbidden, unauthorized } from '../lib/errors.js';
 import { capabilitiesFor, can, hintFor } from '../auth/capabilities.js';
 
 export const SESSION_COOKIE = 'bmems_session';
@@ -109,11 +109,21 @@ export function requireRole(...roles) {
   return (req, _res, next) => {
     if (!req.user) return next(unauthorized());
     if (!set.has(req.user.roleCode)) {
-      return next(new AppError(403, 'insufficient_role', `Requires role: ${roles.join(' or ')}`));
+      // Same shape as requireCap 403s: human message + details.hint (UI renders both).
+      const friendly = roles.map((r) => ROLE_FRIENDLY[r] ?? `the “${r}” role`).join(' or ');
+      return next(forbidden(`This area is for ${friendly}.`, {
+        hint: 'Ask a department administrator if your role should include this.',
+        requiredRole: roles,
+      }));
     }
     return next();
   };
 }
+const ROLE_FRIENDLY = {
+  admin: 'a department administrator',
+  technician: 'biomedical engineering staff',
+  reporter: 'a registered reporter',
+};
 
 /** Capability gate — the preferred form, since it describes intent, not seniority. */
 export function requireCap(...capabilities) {

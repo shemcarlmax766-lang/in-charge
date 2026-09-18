@@ -127,9 +127,10 @@ config — see [INTEGRATIONS.md](INTEGRATIONS.md).
 * `GET /risk/:equipmentId` — score, band, `contributing[]` per factor, `advice[]`, `rawScore`,
   and the always-present `disclaimer`. Rule-based decision support — see [SAFETY.md](SAFETY.md).
 
-## 9. Reports — `/reports` (admin, `report.generate` / `export.data`)
+## 9. Reports — `/reports` (data + exports: `report.generate` / `export.data`)
 
-`GET /` (catalogue) · `GET /:key?from&to&format=json` · `GET /export/:key/csv` (UTF-8 BOM,
+`GET /` (catalogue — titles/descriptions, authed staff; informational, intentionally ungated) ·
+`GET /:key?from&to&format=json` · `GET /export/:key/csv` (UTF-8 BOM,
 CRLF, formula-injection neutralised) · `GET /export/:key/print` (self-contained HTML with
 `window.print()` — print-to-PDF from the browser). Keys: `inventory`, `faults`, `maintenance`,
 `costs`, `downtime`, `failures`, `compliance`, `audit`. Columns and parameters:

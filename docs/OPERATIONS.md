@@ -65,6 +65,8 @@ Runtime settings (not env): institution name, currency, SLA hours, due-soon wind
 | `npm run reset` | delete DB + re-migrate — dev only (uploads untouched; nuke `data/uploads` yourself if needed) |
 | `npm test` | 87 server + 42 client tests (~1 min) |
 | `npm run lint` | static hygiene gate (secrets, SQL, XSS, env-docs sync) |
+| `npm run smoke -- --base https://…` | read-only live-environment check (31 probes incl. PWA files, RBAC negatives, QR contract, exports); `--mutations` adds the idempotent reminder sweep. Credentials via `SMOKE_PASSWORD` (+ optional `SMOKE_ADMIN/TECH/REPORTER`) — never stored in the script |
+| `npm run icons` | regenerate PWA icons (dependency-free renderer, `scripts/make-icons.mjs`) |
 
 ## 5. systemd (a real prod unit)
 
@@ -114,8 +116,13 @@ server {
 }
 ```
 
-Set `TRUST_PROXY=1`. Smoke test after deploy: `curl -H "Host: equipment.myschool.edu" http://127.0.0.1:4000/api/health`,
-open `/e/<some-tag>` from a phone on the LAN (that's the QR contract), print one label and scan it.
+Set `TRUST_PROXY=1`. Smoke test after deploy:
+
+```bash
+SMOKE_PASSWORD='<deploy password>' npm run smoke -- --base https://equipment.myschool.edu   # 31 read-only checks
+# then: open /e/<some-tag> from a phone on the LAN (the QR contract), print one label and scan
+# it, install-to-home-screen once (the PWA), and eyeball the CSP/console for errors.
+```
 
 ## 7. Backup & restore (the boring guarantee)
 
