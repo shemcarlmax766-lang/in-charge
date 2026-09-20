@@ -17,9 +17,13 @@
 import process from 'node:process';
 
 const args = process.argv.slice(2);
+// accepts both --flag=value and --flag value
 const arg = (name, dflt) => {
-  const hit = args.find((a) => a.startsWith(`--${name}=`));
-  return hit ? hit.slice(name.length + 3) : dflt;
+  const eq = args.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.slice(name.length + 3);
+  const i = args.indexOf(`--${name}`);
+  if (i >= 0 && args[i + 1] && !args[i + 1].startsWith('--')) return args[i + 1];
+  return dflt;
 };
 const BASE = (arg('base', process.env.SMOKE_BASE || 'http://127.0.0.1:5173')).replace(/\/+$/, '');
 const MUTATIONS = args.includes('--mutations');
@@ -76,7 +80,7 @@ async function main() {
     ? manifestRes.data
     : (() => { try { return JSON.parse(manifestRes.data); } catch { return null; } })();
   ok('PWA manifest serves and parses', manifestRes.status === 200 && !!manifestJson?.icons?.length,
-    manifestJson ? `${manifestJson.icons.length} icons` : `status ${manifestRes.status}`);
+    manifestJson?.icons?.length ? `${manifestJson.icons.length} icons` : `status ${manifestRes.status}`);
   const sw = await req('/sw.js');
   ok('service worker script serves (prod only registers)', sw.status === 200 && String(sw.data).includes('bems-shell-v1'));
   const icon = await req('/icons/icon-192.png');

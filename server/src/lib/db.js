@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { config } from '../config/index.js';
 
@@ -115,7 +116,9 @@ export class Db {
  * one-per-transaction so a failed migration never half-applies.      *
  * ------------------------------------------------------------------ */
 
-const HERE = path.dirname(new URL(import.meta.url).pathname);
+// fileURLToPath — NOT `.pathname`: the latter keeps %20-encoding and, on Windows, the `/C:/`
+// prefix that path.resolve then turns into `C:\C:\…` (real crash: paths containing spaces).
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Number of `?` anonymous parameters in a statement, ignoring those inside string literals
