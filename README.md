@@ -40,6 +40,12 @@ to choose another; unset, the seeder generates one and prints it once — it is 
 Sign in as each to see the same system with genuinely different powers — capability-based RBAC
 is enforced server-side, not just in the UI.
 
+**No account?** The sign-in screen offers **“Create a Reporter account”** — self-registration is
+Reporter-only by design (technicians and administrators stay department-provisioned; see
+docs/SECURITY.md §1.1). **Forgotten password?** “Forgot your password?” emails a six-digit
+one-time code; on a demo build with no SMTP server configured, the code is shown on screen
+(labelled as demo behaviour) and written to `data/outbox/` — set `SMTP_HOST` for real delivery.
+
 ## What you can do in 5 minutes
 
 1. **Scan like a student:** open `/e/BMU-ECG-0001` (what every printed label points at) — a

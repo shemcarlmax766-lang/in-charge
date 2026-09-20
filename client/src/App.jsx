@@ -5,6 +5,8 @@ import { ToastProvider } from './components/Toast.jsx';
 import { AppShell } from './components/AppShell.jsx';
 import { Loading } from './components/ui.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
+import { RegisterPage } from './pages/RegisterPage.jsx';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage.jsx';
 import { QrLandingPage } from './pages/QrLandingPage.jsx';
 
 /*
@@ -71,6 +73,8 @@ export function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           {/* The QR target must resolve before sign-in, so it lives outside the shell. */}
           <Route path="/e/:tag" element={<QrLandingPage />} />
           <Route path="/" element={<Shell><DashboardPage /></Shell>} />

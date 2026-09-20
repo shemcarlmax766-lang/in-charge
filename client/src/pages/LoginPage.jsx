@@ -103,9 +103,15 @@ export function LoginPage() {
           </Button>
         </div>
 
+        <div className="login__links">
+          <Link to="/forgot-password">Forgot your password? Get a one-time reset code</Link>
+          {config?.selfRegistration === false ? null : (
+            <Link to="/register">No account yet? Create a Reporter account</Link>
+          )}
+        </div>
         <p className="form-note" style={{ textAlign: 'center', fontSize: '.78rem' }}>
-          Forgotten password? Ask the department administrator to reset it — self-service reset
-          needs the email integration that is not enabled on this deployment.
+          Reset codes go to the email on your account. If this deployment has no mail server,
+          the department administrator can still reset passwords for you.
         </p>
 
         <p className="login__foot">{SAFETY_NOTICE}</p>

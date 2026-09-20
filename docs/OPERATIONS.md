@@ -40,6 +40,10 @@ zero-dependency and process env always wins over the file. Every key with its de
 | `DATA_DIR` / `DATABASE_PATH` / `UPLOAD_DIR` | `./data...` | db/files | absolute paths recommended in systemd unit |
 | `SESSION_TTL_HOURS` / `SESSION_REMEMBER_TTL_HOURS` | `12` / `336` | sessions | remember-me = 14 d |
 | `MAX_FAILED_LOGIN_ATTEMPTS` / `LOGIN_LOCKOUT_MINUTES` | `6` / `15` | login | per account |
+| `ALLOW_SELF_REGISTRATION` | `1` | onboarding | self-sign-up creates **Reporter** accounts only; `0` = admin-provisioned only (UI hides the link, API 403s) |
+| `RESET_CODE_TTL_MINUTES` / `RESET_MAX_ATTEMPTS` / `RESET_THROTTLE_SECONDS` | `15` / `5` / `60` | recovery | one-time code lifetime, burn limit, per-account spacing |
+| `REVEAL_OTP_IN_RESPONSE` | `1` | recovery | demo convenience: code echoed in the API response — only ever honoured on non-production builds **without** `SMTP_HOST`; set `0` to close it anyway |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` / `SMTP_TIMEOUT_MS` | unset → outbox | mail | recovery codes send via nodemailer when `SMTP_HOST` is set; otherwise they land as files in `data/outbox/` |
 | `MIN_PASSWORD_LENGTH` | `12` | policy | floor 8 enforced by `assertConfig` |
 | `SCRYPT_N` | `16384` | hashing | raise when hardware allows; stored hashes stay valid (self-describing) |
 | `MAX_UPLOAD_MB` / `MAX_UPLOAD_FILES` | `8` / `5` | multer+files | |
@@ -162,4 +166,5 @@ npm run reset && npm run seed   # fresh fictional fleet; console + data/demo-cre
 ```
 The seeded accounts are listed in README.md; password comes from `SEED_PASSWORD` when set,
 otherwise generated once. Uploads persist across reset — delete `data/uploads` first if the demo
-photos must go too.
+photos must go too. So does `data/outbox/` (recovery mail artifacts) and the `password_resets`
+rows ride the DB itself: a reset clears them.

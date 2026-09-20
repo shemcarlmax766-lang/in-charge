@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../lib/db.js';
+import { config } from '../config/index.js';
 import { validate } from '../lib/validate.js';
 import { asyncRoute } from '../middleware/errorHandler.js';
 import { notFound } from '../lib/errors.js';
@@ -29,6 +30,10 @@ router.get('/config', (req, res) => {
     demoData: settingsValue(db, 'demo_data_installed', '0') === '1' || settingsValue(db, 'demo_data_installed', false) === true,
     signInSection: '/login',
     reportRequiresAccount: true,
+    // What the login/register screens may promise. Both are enforced server-side too —
+    // this only decides whether the UI offers the path at all.
+    selfRegistration: config.auth.selfRegistration,
+    passwordMinLength: config.auth.minPasswordLength,
   });
 });
 

@@ -24,7 +24,9 @@ surface so design review means reading ~1 file per concern.
 
 | Route | Screen | Roles | Notes |
 | --- | --- | --- | --- |
-| `/login` | Login | public | policy hints, lockout message verbatim |
+| `/login` | Login | public | policy hints, lockout message verbatim, links to self-registration and recovery |
+| `/register` | Create a Reporter account | public | plain-language role limits, per-field server errors, honest “registration closed” state |
+| `/forgot-password` | Password recovery | public | two steps on one page (request → redeem), labelled demo-code callout, “start again” |
 | `/e/:tag` | **QR landing** | public | opened by every physical label; equipment card + “Report a fault” CTA → `/report/:tag`; sign-in offered, not required to view |
 | `/` | Dashboard | all | KPI tiles + charts, `scope` varies by role (reporter sees own-report panel) |
 | `/equipment` | Inventory list | all | search + 7 filters + status chips; “Print labels” for selected rows (`equipment.qr`) |

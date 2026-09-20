@@ -35,18 +35,23 @@ notifications if the process dies mid-request):
   sweep, idempotent — no re-ping inside the window; `POST /maintenance/reminders` triggers it
   manually).
 
-### Adding a transport (worked example: email)
+### Email transport (implemented: `services/mail.service.js`)
 
-1. Create `server/src/notify/email.js` exporting `async function deliver({ to, subject, body })`
-   (nodemailer SMTP, or the campus relay — config goes in `.env`: host/port/user/pass vars).
-2. In `notifyUser`’s channel loop, the branch `else { recordDelivery(… 'pending' …) }` becomes
-   `await queueOrSend(channel, cfg, target, payload)` that calls the adapter and records
-   `sent`/`failed` + provider error text. Nothing else changes: no schema migration, no call-site
-   edits, the ledger becomes the SMTP audit trail for free.
-3. Set `ENABLE_EMAIL_NOTIFY=1`. Delivery failures must **not** fail the business request — the
-   send already runs post-commit by design; adapters catch and record `failed`.
+Password recovery sends through `sendMail({to, subject, text})`, chosen by configuration alone:
 
-SMS follows the same 3 steps (users already carry `phone`); push wants a small addition first:
+1. `SMTP_HOST` set → **nodemailer** transport (STARTTLS by default, `SMTP_SECURE=1` for
+   implicit TLS; `SMTP_USER`/`SMTP_PASS` optional for open campus relays; `SMTP_TIMEOUT_MS`
+   caps a hung relay at 15 s). Unreachable relays return `{status:'failed', detail}` — the
+   recovery flow survives and says so honestly instead of pretending mail flew.
+2. No `SMTP_HOST` → the mail is written as a real file under `data/outbox/` (date/subject/body,
+   one per send) and echoed in the server log. Demos and school networks without a relay can run
+   the *entire* flow end-to-end; `password_resets.delivery_status` records which happened.
+
+Bulk *notification* mail (fault assigned, maintenance due, …) still records `pending` in the
+delivery ledger — `notifyUser`'s loop is sync-by-transaction, so wiring it to `sendMail` needs a
+post-commit queue. Deliberately not invented here; the adapter above is the seam.
+
+SMS follows the same shape (users already carry `phone`); push wants a small addition first:
 a `device_tokens` table + Web Push VAPID keys — deliberately not invented here because the
 department asked for “ready structure”, not push itself.
 

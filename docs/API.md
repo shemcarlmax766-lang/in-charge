@@ -22,13 +22,16 @@ server proxies `/api` to port 4000.
 | Method | Path | Access | Notes |
 | --- | --- | --- | --- |
 | POST | `/login` | public | `{email, password, rememberMe?}`. 401 on bad credentials (generic message); lockout after `MAX_FAILED_LOGIN_ATTEMPTS` for `LOGIN_LOCKOUT_MINUTES`. Sets session cookie + returns `{user, token, csrfToken}`. |
+| POST | `/register` | public | Self-service **Reporter** account: `{fullName, email, password, department?, phone?}` → 201 `{user}`. Only that role is creatable here; 409 on duplicate email; policy failures come back as field errors. Refused with 403 when `ALLOW_SELF_REGISTRATION=0`. See SECURITY.md §1.1. |
+| POST | `/forgot-password` | public | `{email}` → always `202` with an identical message; a code is issued only when an active account matches (SMTP or outbox file). On non-production builds with no mail server the response also carries `devOtp` — labelled demo convenience, impossible in production. |
+| POST | `/reset-password` | public | `{email, code, newPassword}` → 200. Success = password changed, all sessions revoked, lockout cleared, audit + notification written. Unknown/wrong/expired/burned codes all get the same 400 sentence. |
 | POST | `/logout` | auth | Clears server-side session and cookie. |
 | GET | `/me` | auth | Current user + `capabilities[]` (client renders from this) + `csrfToken`. |
 | POST | `/change-password` | auth | `{currentPassword, newPassword}`; enforces policy from `/auth/policy`; revokes all *other* sessions. |
 | GET | `/sessions` | auth | Active sessions (device/UA, IP, last-seen) for the current user. |
 | DELETE | `/sessions/:id` | auth | Revoke one of your own sessions. |
 | POST | `/sessions/revoke-all` | auth | Sign out everywhere (keeps the calling session). |
-| GET | `/policy` | public | Password policy for form hints (min length, scrypt strength label). |
+| GET | `/policy` | public | Password policy for form hints (min length, scrypt strength label) + `selfRegistration` / `recoveryCodeTtlMinutes`. |
 
 ## 3. Users — `/users` (admin; `user.view` for technicians)
 
@@ -158,8 +161,9 @@ the parent record's state. Files are never served by URL; there is no public pat
 
 ## 12. Public — `/public` (rate-limited, no auth)
 
-* `GET /config` — institution name, logo text, whether SSO/QR-reporting are on. Used by the
-  QR landing screen before login.
+* `GET /config` — institution name, logo text, whether SSO/QR-reporting are on, plus
+  `selfRegistration` and `passwordMinLength` so the sign-in screen only ever offers paths the
+  server will actually honour. Used by the QR landing screen before login.
 * `GET /equipment/:tag` — minimal safe profile (tag, name, category, room, status, open-fault
   flag) for scanning a label; 404 for unknown tags; **no serials, no history, no contacts**.
 * `GET /equipment/:tag/photo` — the hero image for the landing card (same visibility rule).

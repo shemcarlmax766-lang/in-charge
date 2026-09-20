@@ -50,7 +50,8 @@ residual risk the department is accepting. Ordered roughly by likelihood × impa
 
 | # | Failure | Mitigation |
 | --- | --- | --- |
-| 5.1 | SMTP/SMS provider down or unconfigured | Channel rows land as `skipped`/`failed` with reason (`notification_deliveries`) — in-app still delivers, and admins can *see* why nothing arrived, which is the whole point of the table |
+| 5.1 | SMTP/SMS provider down or unconfigured | Channel rows land as `skipped`/`failed` with reason (`notification_deliveries`) — in-app still delivers, and admins can *see* why nothing arrived, which is the whole point of the table. For recovery mail the mirror is `password_resets.delivery_status` (+ `data/outbox/` when no SMTP host is configured at all): a failed send never fails the request, and the user-facing text tells the truth instead of promising mail |
+| 5.3 | Recovery code never received (bad relay, full disk, junk email folder) | Codes are useless-by-design after `RESET_CODE_TTL_MINUTES`, so the retry path is the remedy: “start again” issues a superseding code (old one dies). Administrator reset remains the fallback rail for exactly this failure; both routes are audited |
 | 5.2 | Notification fan-out amplification (one critical fault → N techs) | One insert per recipient in the same tx as the transition (no queue to lose), recipients = capability holders (bounded by staff count); `POST /prune` keeps the table tidy |
 
 ## 6. Deliberate non-failures (scoping decisions, listed so they aren't rediscovered as “bugs”)

@@ -86,6 +86,36 @@ export const config = {
     minPasswordLength: int(env.MIN_PASSWORD_LENGTH, 12),
     // scrypt cost parameters — raise them if the server has headroom.
     scrypt: { N: int(env.SCRYPT_N, 16384), r: 8, p: 1, keylen: 64 },
+
+    // Self-service password recovery (see docs/SECURITY.md §“Password recovery”).
+    recovery: {
+      codeTtlMinutes: int(env.RESET_CODE_TTL_MINUTES, 15),
+      maxAttempts: int(env.RESET_MAX_ATTEMPTS, 5),
+      // Minimum gap between two codes for the same account, so a forgotten-password
+      // form cannot be used to flood an inbox (or the outbox) on repeat submits.
+      throttleSeconds: int(env.RESET_THROTTLE_SECONDS, 60),
+      // Demo convenience: when NO mail server is configured, the reset API may echo the
+      // code in its response so the flow can be exercised end-to-end. Never in production,
+      // never while a real SMTP host is set — both conditions are enforced below, not here.
+      revealCodeInResponse: bool(env.REVEAL_OTP_IN_RESPONSE, true),
+    },
+
+    // Account onboarding policy: self-service accounts are always Reporters; technician and
+    // admin accounts remain admin-provisioned (safety boundary — see docs/SAFETY.md).
+    selfRegistration: bool(env.ALLOW_SELF_REGISTRATION, true),
+  },
+
+  // Outbound email transport for recovery codes (and any future channel). With SMTP_HOST
+  // unset, mail is written to <DATA_DIR>/outbox/ as a real, inspectable artifact instead
+  // of silently vanishing — the delivery ledger tells you which happened.
+  mail: {
+    host: str(env.SMTP_HOST, ''),
+    port: int(env.SMTP_PORT, 587),
+    secure: bool(env.SMTP_SECURE, false),          // implicit TLS (465); otherwise STARTTLS
+    user: str(env.SMTP_USER, ''),
+    pass: str(env.SMTP_PASS, ''),
+    from: str(env.MAIL_FROM, 'BEM-FRS <no-reply@localhost>'),
+    timeoutMs: int(env.SMTP_TIMEOUT_MS, 15000),
   },
 
   uploads: {

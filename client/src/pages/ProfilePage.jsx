@@ -154,9 +154,10 @@ function PasswordPanel({ forced, onDone }) {
           </div>
         </form>
       </Card>
-      <Callout tone="info" title="Why there is no “forgotten password” link">
-        Password reset by email needs the email integration, which is not enabled on this deployment. Until it is, the department
-        administrator resets it for you — one conversation, and the audit trail records who did it.
+      <Callout tone="info" title="Forgotten your password?">
+        Use “Forgot your password?” on the sign-in page — a one-time code is sent to your account's email,
+        expires after 15 minutes, and any successful reset signs every other device out. The department
+        administrator can also reset it directly; both paths are written to the audit trail.
       </Callout>
       <ConfirmDialog open={confirmOut} title="Sign out of every device?" body="You will be returned to the sign-in screen. This cannot be undone from the browser."
         confirmLabel="Sign out everywhere" onCancel={() => setConfirmOut(false)}

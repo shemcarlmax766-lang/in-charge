@@ -35,6 +35,38 @@ scoped to that — this is not a bank.
   changing password revokes all other sessions; admin `POST /users/:id/sign-out` revokes everything
   for that user; deactivating a user revokes their sessions in the same transaction.
 
+### 1.1 Self-service onboarding & password recovery (OTP)
+
+* **Self-registration** (`POST /auth/register`) can create **Reporter accounts only** — the role
+  is hard-wired server-side, because a self-declared *technician* is exactly the boundary this
+  project exists to hold (who may diagnose, repair, move equipment out of service stays with
+  department provisioning). Same password policy as everywhere; every registration writes an
+  audit row and notifies every active admin, so an unwanted sign-up is one click from
+  deactivation. Turn the whole path off with `ALLOW_SELF_REGISTRATION=0`; the UI then hides the
+  link and the API answers 403. Duplicate email → 409 *with* a pointer to “Forgot password?”:
+  deliberate small disclosure (weighed against lookalike-account spam in SECURITY trade-off §),
+  because people mid-experiment must not be sent into a silent dead end.
+* **Recovery request** (`POST /auth/forgot-password`) answers `202` with byte-identical prose
+  whether or not the address exists, is disabled, or is mid-throttle; a 6-digit code exists only
+  for real active accounts. Codes are stored as **SHA-256 only** (same discipline as session
+  tokens), expire after `RESET_CODE_TTL_MINUTES` (15), allow `RESET_MAX_ATTEMPTS` (5) wrong
+  tries before burning, are throttled per account to one per `RESET_THROTTLE_SECONDS` (60), and
+  are superseded — a fresh request kills the previous code.
+* **Redeem** (`POST /auth/reset-password`) is one atomic step: password policy is checked
+  *before* the code so a typo in the new-password box costs no attempts; success sets the new
+  hash, clears the login lockout, revokes **every** session (the theft alarm the owner sees),
+  consumes the row, writes audit `user.self_password_reset` and an in-app security notification.
+  Unknown address, wrong code, expired code and burned code all return the same 400 sentence.
+* **Mail delivery** goes through `services/mail.service.js` — real SMTP via nodemailer when
+  `SMTP_HOST` is set, otherwise a readable artifact in `data/outbox/` (see INTEGRATIONS.md);
+  delivery failure never fails the request, and the row records which happened.
+* **Demo reveal — loud, bounded, default-off in prod.** On a build that is *not* production
+  *and* has no SMTP host, the API response additionally carries `devOtp` (and the UI shows it
+  in a labelled “Demo mode” callout) so evaluators can complete the flow with no mail server.
+  Setting `NODE_ENV=production` or any `SMTP_HOST` — or `REVEAL_OTP_IN_RESPONSE=0` — removes the
+  field at the server, not the client. It also reveals account existence, which is precisely
+  why production cannot have it.
+
 ## 2. Authorisation (RBAC)
 
 * Single source of truth: `server/src/auth/capabilities.js` (admin / technician / reporter → capability

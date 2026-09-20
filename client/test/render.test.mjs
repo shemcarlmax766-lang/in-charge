@@ -122,6 +122,9 @@ const SCREENS = [
   { route: '/notifications', name: 'notifications', role: 'technician', expect: ['What the department has been told', 'Unread', 'Mark all read'] },
   { route: '/profile', name: 'profile', role: 'admin', expect: ['Your account', 'Your details', 'Devices', 'What I can do'] },
   { route: '/e/BMU-ECG-0001', name: 'QR landing (anonymous)', role: 'public', expect: ['Sign in to report a fault', 'does not assess patient safety'] },
+  { route: '/login', name: 'sign-in (anonymous)', role: 'public', expect: ['Sign in', 'Forgot your password', 'Create a Reporter account'] },
+  { route: '/register', name: 'self-registration (anonymous)', role: 'public', expect: ['Create a Reporter account', 'What this account can do', 'Repeat password'] },
+  { route: '/forgot-password', name: 'password recovery (anonymous)', role: 'public', expect: ['Recover your password', 'Send me a reset code', 'email address on the account'] },
   { route: '/nothing-here', name: 'not found', role: 'admin', expect: ['That page does not exist'] },
 ];
 

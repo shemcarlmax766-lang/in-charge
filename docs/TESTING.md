@@ -5,13 +5,13 @@ Two suites, zero extra infra: **Node's built-in test runner** (`node --test`) on
 thing must run on the reviewer's laptop in seconds.
 
 ```bash
-npm test              # server (87) then client (42) — the same command used after every phase
+npm test              # server (103) then client (48) — the same command used after every phase
 npm run test:server   # node --test server/test/*.test.js against an ephemeral DB
 npm run test:client   # builds the SPA bundle, renders 20 screen-states × 2 viewports
 npm run lint          # scripts/lint.mjs (secrets/SQL/XSS/env-docs structural checks)
 ```
 
-## 1. Server suite (87 tests, ~5 s)
+## 1. Server suite (103 tests, ~5 s)
 
 `server/test/helpers.js` boots the real Express app against a **fresh file-backed SQLite DB per
 suite file** (migrations applied, not mocks), seeds a tiny deterministic fixture (3 users — one
@@ -32,8 +32,9 @@ drive the *account* limiter directly instead of the IP one.
 | `08-notifications.test.js` | 6 | lifecycle events fan out to the right recipients (critical → techs+admins); read/unread/prune; delivery rows `sent` vs `skipped` per channel config; notifications link to viewable entities; no cross-user reads |
 | `09-reports.test.js` | 8 | all 8 reports × JSON/CSV/print; CSV = BOM + CRLF + formula-prefixed `'` + proper quoting; date-range params; audit report admin-only; row counts match seeded reality |
 | `10-security.test.js` | 13 | traversal on attachment/ids paths; oversized upload 413; oversize body 413; SQLi/XSS probes in `q`/notes return normal data; MIME spoof; rate limit 429 + Retry-After; no stack/path leakage in 500-path errors; `X-Frame-Options`/CSP/`nosniff` present; CSRF header required; public endpoints leak nothing beyond profile; audit covers failed logins |
+| `11-recovery.test.js` | 16 | self-registration: reporter-only hard-wire, 403s after, duplicate 409, policy 400 w/ field errors, audit row + admin fan-out, cookie-without-CSRF rejected on public POST; recovery: identical 202 known/unknown, hash-only storage, outbox artifact carries the revealed code, throttle, 5-attempt burn, policy-before-burn ordering, supersession, expiry, session revocation + lockout clear on success, disabled accounts, redemptions indistinguishable, reveal fields on `/auth/policy` |
 
-## 2. Client render harness (42 tests)
+## 2. Client render harness (48 tests)
 
 The sandbox has no Playwright/CDP browser (CDN unreachable — recorded in the build log), so the
 client is verified with a **record-and-replay** approach that still exercises the real code path:
@@ -47,7 +48,8 @@ client is verified with a **record-and-replay** approach that still exercises th
 3. `client/test/render.test.mjs` boots **jsdom** (`runScripts: 'dangerously'`), monkey-patches
    `fetch` to serve the recorded fixtures, mounts the full router, and per screen-state asserts:
    key text renders, no console errors, no unhandled rejections — once at **1440 px** and once at
-   **390 px** (20 states × 2 + boot/identity tests = 42). Empty, error and forced-password-change
+   **390 px** (23 states × 2 + boot/identity tests = 48 — including the three anonymous screens:
+   sign-in, self-registration, recovery). Empty, error and forced-password-change
    variants are included.
 
 This is what caught the crash-class bugs the desktop-only manual pass could not (null date

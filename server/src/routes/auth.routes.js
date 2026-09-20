@@ -7,6 +7,7 @@ import { loginLimit } from '../middleware/security.js';
 import { requireAuth } from '../middleware/auth.js';
 import { SESSION_COOKIE, cookieOptions } from '../middleware/auth.js';
 import * as users from '../services/user.service.js';
+import { requestReset, completeReset } from '../services/password-reset.service.js';
 import { capabilitiesFor, ROLES } from '../auth/capabilities.js';
 
 const router = Router();
@@ -38,6 +39,45 @@ router.post('/login', loginLimit(), asyncRoute(async (req, res) => {
     capabilities: capabilitiesFor(result.user),
     roles: Object.values(ROLES).map(({ code, label }) => ({ code, label })),
   });
+}));
+
+/**
+ * POST /auth/register — self-service account creation, Reporter role only (enforced
+ * server-side; see user.service.selfRegister for the why).
+ */
+router.post('/register', loginLimit(), asyncRoute(async (req, res) => {
+  const { value } = validate(req.body, {
+    fullName: { type: 'string', required: true, min: 2, max: 120, trim: true },
+    email: { type: 'string', required: true, max: 160, trim: true, lowercase: true, pattern: /^\S+@\S+\.\S+$/, message: 'Enter a valid email address' },
+    password: { type: 'string', required: true, max: 200 },
+    phone: { type: 'string', max: 40 },
+    department: { type: 'string', max: 120 },
+  });
+  res.status(201).json(await users.selfRegister(getDb(), value, req));
+}));
+
+const forgotSchema = {
+  email: { type: 'string', required: true, max: 160, trim: true, lowercase: true },
+};
+
+/**
+ * POST /auth/forgot-password — always 202, never reveals whether the address exists.
+ * In dev mode without a mail server, the response additionally carries `devOtp`
+ * (see docs/SECURITY.md); production builds can never get that field.
+ */
+router.post('/forgot-password', loginLimit(), asyncRoute(async (req, res) => {
+  const { value } = validate(req.body, forgotSchema);
+  res.status(202).json(await requestReset(getDb(), { email: value.email, req }));
+}));
+
+/** POST /auth/reset-password — redeem code + choose new password in one atomic step. */
+router.post('/reset-password', loginLimit(), asyncRoute(async (req, res) => {
+  const { value } = validate(req.body, {
+    ...forgotSchema,
+    code: { type: 'string', required: true, pattern: /^\d{6}$/, message: 'Enter the six-digit code you received' },
+    newPassword: { type: 'string', required: true, max: 200 },
+  });
+  res.json(await completeReset(getDb(), { ...value, req }));
 }));
 
 router.post('/logout', asyncRoute((req, res) => {
@@ -90,6 +130,8 @@ router.get('/policy', asyncRoute((_req, res) => {
     maxUploadFiles: config.uploads.maxFiles,
     maxUploadMb: Math.round(config.uploads.maxFileBytes / 1024 / 1024),
     allowedExtensions: config.uploads.allowedExt,
+    selfRegistration: config.auth.selfRegistration,
+    recoveryCodeTtlMinutes: config.auth.recovery.codeTtlMinutes,
   });
 }));
 

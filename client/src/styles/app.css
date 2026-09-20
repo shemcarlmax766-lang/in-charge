@@ -682,6 +682,9 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.5; }
 .login__demo td:last-child { text-align: right; }
 .login__demo button { border: 0; background: none; color: var(--primary); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
 .login__foot { font-size: .72rem; color: var(--text-subtle); text-align: center; }
+.login__links { display: grid; gap: .35rem; justify-items: center; }
+.login__links a { font-size: .84rem; color: var(--primary); text-decoration: none; }
+.login__links a:hover { text-decoration: underline; }
 .pwcheck { display: grid; gap: 3px; font-size: .76rem; }
 .pwcheck li { display: grid; grid-template-columns: 15px 1fr; gap: 6px; color: var(--text-muted); }
 .pwcheck li.ok { color: var(--ok); }

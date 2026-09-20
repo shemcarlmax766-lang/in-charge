@@ -5,6 +5,7 @@ import { hashToken, csrfToken, randomToken, generatePassword } from '../lib/toke
 import { hashPassword, verifyPassword, needsRehash, passwordProblems } from '../lib/password.js';
 import { badRequest, conflict, forbidden, notFound, tooMany, unauthorized } from '../lib/errors.js';
 import { audit } from '../lib/audit.js';
+import { notifyUser } from './notification.service.js';
 import { capabilitiesFor, ROLES, roleLabel } from '../auth/capabilities.js';
 
 const DUMMY_HASH =
@@ -215,6 +216,58 @@ export async function createUser(db, input, actor, req) {
 
   const created = getUser(db, lastInsertRowid);
   return { user: created, temporaryPassword: generated ? password : null };
+}
+
+/**
+ * Self-service onboarding (see docs/SECURITY.md “Onboarding”).
+ *
+ * The ONLY role anyone can give themselves is Reporter: reporting faults is the one
+ * capability whose worst-case misuse is a wrong-but-honest ticket that a technician
+ * reclassifies. Technician/Admin accounts stay admin-provisioned, because a system where
+ * anyone can self-claim "technician" is a system where anyone can close fault tickets and
+ * sign equipment in and out of service — which is exactly the boundary this project was
+ * specified to hold. The department is told (in-app, for each active admin) the moment a
+ * registration lands, so a spam sign-up is one click from deactivation.
+ */
+export async function selfRegister(db, input, req) {
+  if (!config.auth.selfRegistration) {
+    throw forbidden('Self-service registration is disabled on this deployment. Ask an administrator to create your account.');
+  }
+  const email = String(input.email).trim().toLowerCase();
+  const fullName = String(input.fullName).trim().replace(/\s+/g, ' ');
+
+  const problems = passwordProblems(input.password, { fullName, email });
+  if (problems.length) throw badRequest('Password does not meet policy', { fields: { password: problems } });
+  if (db.get('SELECT id FROM users WHERE email = ?', [email])) {
+    throw conflict('An account already uses that email address. Use “Forgot password?” if you cannot get in.');
+  }
+
+  const { lastInsertRowid } = db.run(
+    `INSERT INTO users (employee_id, full_name, email, phone, job_title, department, password_hash,
+                        role_id, is_active, must_change_password, created_at, created_by)
+     VALUES (NULL,?,?,?,?,?,?,?,1,0,?,NULL)`,
+    [fullName, email, input.phone ?? null, null,
+      (input.department ? String(input.department).trim() : 'Biomedical Engineering').slice(0, 120),
+      await hashPassword(input.password), ROLES.reporter.id, nowIso()],
+  );
+
+  audit({
+    actor: null, action: 'user.self_register', entityType: 'user', entityId: lastInsertRowid, entityRef: email,
+    summary: `Reporter account self-created by ${fullName}`,
+    after: { email, fullName, department: input.department ?? 'Biomedical Engineering' }, req,
+  });
+  for (const admin of db.all(
+    `SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+      WHERE r.code = 'admin' AND u.is_active = 1`)) {
+    notifyUser(db, {
+      userId: admin.id, type: 'account', severity: 'info',
+      title: 'New self-registered reporter',
+      body: `${fullName} (${email}) opened a reporter account. Review on the Users page if you do not recognise them.`,
+      link: '/users',
+    });
+  }
+
+  return { user: getUser(db, lastInsertRowid) };
 }
 
 const UPDATABLE = {

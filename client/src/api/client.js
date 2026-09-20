@@ -107,6 +107,9 @@ export const api = {
 
 export const auth = {
   login: (email, password, remember) => request('/auth/login', { method: 'POST', body: { email, password, remember } }),
+  register: (body) => request('/auth/register', { method: 'POST', body }),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (body) => request('/auth/reset-password', { method: 'POST', body }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
   policy: () => request('/auth/policy'),

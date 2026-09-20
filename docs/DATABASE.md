@@ -4,7 +4,8 @@ Engine: **SQLite** via Node 22's built-in `node:sqlite` (`server/src/lib/db.js`)
 WAL journal, `foreign_keys=ON`, `busy_timeout=5000`. One writer at a time — right-sized for a
 departmental deployment; see §6 for the upgrade path.
 
-Totals: **24 tables · 266 columns · 43 foreign keys · 56 indexes · 54 CHECK constraints**
+Totals: **25 tables · 277 columns · 44 foreign keys · 57 indexes · 57 CHECK constraints**
+(001_init.sql + 002_auth_recovery.sql)
 (single migration: `server/src/db/migrations/001_init.sql`).
 
 ## 1. Design rules applied
@@ -28,6 +29,7 @@ Totals: **24 tables · 266 columns · 43 foreign keys · 56 indexes · 54 CHECK 
 roles ──┐
         ├─ users ──── sessions
         │     │         └ csrf per session
+        │     ├─ owns password_resets (002 — one-time recovery codes)
         │     ├─ owns notifications ─── notification_deliveries (per channel, incl. skipped)
         │     └─ actor of ── audit_logs
 equipment_categories ─┐
@@ -88,6 +90,7 @@ app_settings · id_sequences · schema_migrations
 | `notifications` | In-app inbox: `type`, `title`, `body`, `link`, `severity`, entity back-ref, read state. |
 | `notification_deliveries` | One row per (notification, channel) with status `sent`/`failed`/`skipped` + reason. The trail stays honest even with no SMTP/SMS provider wired. |
 | `audit_logs` | Actor (id + role snapshot), `action`, `entity_type/id/ref`, human `summary`, `before_json`/`after_json` diff, ip, UA. Query endpoint `/audit` is admin-only. |
+| `password_resets` | (002) One-time recovery codes: only the **SHA-256** of the code, requester IP as hash, expiry, attempt counter, and where/how the mail was delivered (`sent`/`outbox`/`failed`). `consumed_at` kills superseded, used and burned rows alike. |
 | `app_settings` | Typed settings (`sla_hours` JSON, `due_soon_days`, `currency`, institution strings…). GET for authed users, PATCH admin-only. |
 | `id_sequences` | `(key, last_value)`, bumped with `UPDATE` + `SELECT` inside the insert transaction (`nextSequence`), `INSERT … ON CONFLICT DO NOTHING` to create on first use. |
 | `schema_migrations` | Filename, applied_at, **sha256 checksum** — boot verifies re-hashes applied files and refuses to start on drift, so “edited after applying” is loud, not silent. |
